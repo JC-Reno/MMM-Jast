@@ -1,0 +1,76 @@
+{
+  "name": "mmm-jast",
+  "version": "2.10.5",
+  "description": "A minimalistic stock ticker based on Yahoo's finance API for the MagicMirror² platform.",
+  "main": "MMM-Jast.js",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jalibu/MMM-Jast.git"
+  },
+  "author": "Jan.Litzenburger@gmail.com",
+  "license": "MIT",
+  "keywords": [
+    "magicmirror",
+    "stock",
+    "stocks",
+    "ticker",
+    "finance",
+    "yahoo",
+    "currency",
+    "currencies",
+    "crypto",
+    "market",
+    "shares"
+  ],
+  "bugs": {
+    "url": "https://github.com/jalibu/MMM-Jast/issues"
+  },
+  "homepage": "https://github.com/jalibu/MMM-Jast#readme",
+  "scripts": {
+    "build": "rollup -c",
+    "demo": "cd ../../ && MM_CONFIG_FILE=modules/MMM-Jast/config.demo.js node --run start:dev",
+    "dev": "rollup -c --sourcemap=inline",
+    "dev:watch": "node --run dev -- --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint && prettier --check .",
+    "lint:fix": "eslint --fix && prettier --write .",
+    "prepare": "node -e \"try{require('simple-git-hooks').run()}catch(e){}\"",
+    "release": "commit-and-tag-version --commit-all --config ./changelog.config.js",
+    "test": "node --run type-check && node --run lint && vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*": [
+      "eslint --fix",
+      "prettier --write --ignore-unknown"
+    ]
+  },
+  "dependencies": {
+    "yahoo-finance2": "^3.13.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/magicmirror-module": "^2.16.6",
+    "@vitest/coverage-v8": "^4.0.18",
+    "commit-and-tag-version": "^12.6.1",
+    "eslint": "^10.0.2",
+    "eslint-plugin-jsdoc": "^62.7.1",
+    "lint-staged": "^16.3.0",
+    "prettier": "^3.8.1",
+    "rollup": "^4.59.0",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^4.0.18"
+  }
+}
