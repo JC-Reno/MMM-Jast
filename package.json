@@ -10,6 +10,9 @@
   },
   "author": "Jan.Litzenburger@gmail.com",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "magicmirror",
     "stock",
@@ -51,7 +54,7 @@
     ]
   },
   "dependencies": {
-    "yahoo-finance2": "^3.13.1"
+    "yahoo-finance2": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

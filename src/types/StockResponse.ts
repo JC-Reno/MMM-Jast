@@ -1,8 +1,21 @@
-import type { Price, SummaryDetail } from 'yahoo-finance2/esm/src/modules/quoteSummary-iface'
+export interface StockPrice {
+  currency?: string
+  regularMarketPrice?: number
+  regularMarketChange?: number
+  regularMarketChangePercent?: number
+  regularMarketPreviousClose?: number
+  regularMarketTime?: string | Date
+  longName?: string
+  symbol?: string
+}
+
+export interface StockSummaryDetail {
+  currency?: string
+}
 
 export interface StockResponse {
-  summaryDetail?: SummaryDetail
-  price?: Price
+  summaryDetail?: StockSummaryDetail
+  price?: StockPrice
   meta: {
     purchasePrice?: number
     symbol: string

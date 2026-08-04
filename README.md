@@ -65,6 +65,8 @@ If you also like this module and want to thank, please rate this repository with
 
 Navigate to the `MagicMirror/modules` directory, clone this repository, and install the dependencies:
 
+Node.js 22 or newer is required.
+
 ```sh
 cd ~/MagicMirror/modules
 git clone https://github.com/jalibu/MMM-Jast

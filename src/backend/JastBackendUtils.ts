@@ -1,22 +1,27 @@
 import * as Log from 'logger'
 import * as yahooFinance2Module from 'yahoo-finance2'
-import type { QuoteSummaryResult } from 'yahoo-finance2/esm/src/modules/quoteSummary'
 import { Config } from '../types/Config'
 import { StockResponse } from '../types/StockResponse'
+
+type QuoteSummaryResponse = {
+  price?: StockResponse['price']
+}
+
+type YahooFinanceClient = {
+  quoteSummary: (symbol: string, options: { modules: string[] }) => Promise<QuoteSummaryResponse>
+}
 
 // Handle both ESM and CommonJS module formats
 // TypeScript sees the namespace import, but at runtime Rollup will provide the correct format
 const YahooFinance = ('default' in yahooFinance2Module
   ? yahooFinance2Module.default
-  : yahooFinance2Module) as unknown as new (options: { suppressNotices: string[] }) => {
-  quoteSummary: (symbol: string, options: { modules: string[] }) => Promise<QuoteSummaryResult>
-}
+  : yahooFinance2Module) as unknown as new (options: { suppressNotices: string[] }) => YahooFinanceClient
 
 const JastBackendUtils = {
   async requestStocks(config: Config): Promise<StockResponse[]> {
     const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
     const stocks = []
-    const promises: Promise<QuoteSummaryResult>[] = []
+    const promises: Promise<QuoteSummaryResponse>[] = []
 
     for (const stock of config.stocks) {
       promises.push(yahooFinance.quoteSummary(stock.symbol, { modules: ['price'] }))
@@ -46,7 +51,10 @@ const JastBackendUtils = {
         if (config.maxChangeAge > 0) {
           const maxChangeAge = new Date().getTime() - config.maxChangeAge
           try {
-            const lastChange = Date.parse(response.price.regularMarketTime)
+            const regularMarketTime = response.price.regularMarketTime
+            const lastChange = Date.parse(
+              typeof regularMarketTime === 'string' ? regularMarketTime : regularMarketTime.toISOString()
+            )
 
             if (maxChangeAge > lastChange) {
               response.price.regularMarketPreviousClose = response.price?.regularMarketPrice

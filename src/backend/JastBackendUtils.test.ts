@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import type { QuoteSummaryResult } from 'yahoo-finance2/esm/src/modules/quoteSummary'
 import { Config } from '../types/Config'
-import { StockResponse } from '../types/StockResponse'
+import { StockPrice, StockResponse } from '../types/StockResponse'
+
+type QuoteSummaryResult = {
+  price?: StockPrice
+  summaryDetail?: {
+    currency?: string
+  }
+}
 
 const mockQuoteSummary = vi.fn()
 
