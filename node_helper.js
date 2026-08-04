@@ -10,4 +10,114 @@
 
   This file is auto-generated. Do not edit.
 ***************************************************************************** */
-"use strict";var e=require("node_helper"),r=require("logger"),t=require("yahoo-finance2");function a(e){if(e&&e.__esModule)return e;var r=Object.create(null);return e&&Object.keys(e).forEach(function(t){if("default"!==t){var a=Object.getOwnPropertyDescriptor(e,t);Object.defineProperty(r,t,a.get?a:{enumerable:!0,get:function(){return e[t]}})}}),r.default=e,Object.freeze(r)}var s=a(e),o=a(r),c=a(t);const i="default"in c?c.default:c,n={async requestStocks(e){const r=new i({suppressNotices:["yahooSurvey"]}),t=[],a=[];for(const t of e.stocks)a.push(r.quoteSummary(t.symbol,{modules:["price"]}));const s=await Promise.all(a.map(e=>e.catch(e=>e)));for(const[r,a]of s.entries())if(a instanceof Error)o.warn(`API request for ${e.stocks[r].symbol} failed:`,a.message);else if(a.price){const s={symbol:e.stocks[r].symbol,name:e.stocks[r].name,quantity:e.stocks[r].quantity,hidden:e.stocks[r].hidden,purchasePrice:e.stocks[r].purchasePrice};if("GBp"===a.price.currency&&(a.price.regularMarketPrice/=100,a.price.regularMarketChange/=100,a.price.currency="GBP"),e.maxChangeAge>0){const r=(new Date).getTime()-e.maxChangeAge;try{r>Date.parse(a.price.regularMarketTime)&&(a.price.regularMarketPreviousClose=a.price?.regularMarketPrice,a.price.regularMarketChange=0,a.price.regularMarketChangePercent=0)}catch(e){o.warn("Could not parse lastChange date",e)}}t.push({price:a.price,meta:s})}else o.warn(`Response for ${e.stocks[r].symbol} does not satisfy expected payload.`);return t}},l=["regularMarketChange","regularMarketChangePercent","regularMarketPrice","currency","longName","regularMarketPreviousClose"];module.exports=s.create({start(){o.log(`${this.name} helper method started...`)},async socketNotificationReceived(e,r){if(e.includes("JAST_STOCKS_REQUEST")){const t=e.substring(20);let a=await n.requestStocks(r);a=a.filter(e=>l.every(r=>!!Object.prototype.hasOwnProperty.call(e.price,r)||(o.warn(`Skipped symbol '${e.meta.symbol}' as it's response did not have required property '${r}'. This is usually the case when a symbol is misspelled`),!1)));const s={lastUpdate:Date.now(),stocks:a};this.sendSocketNotification(`JAST_STOCKS_RESPONSE-${t}`,s)}else o.warn(`${e} is invalid notification`)}});
+
+'use strict'
+
+const NodeHelperImport = require('node_helper')
+const Log = require('logger')
+const YahooFinanceImport = require('yahoo-finance2')
+
+const NodeHelper = NodeHelperImport && NodeHelperImport.default ? NodeHelperImport.default : NodeHelperImport
+const YahooFinance =
+  YahooFinanceImport && YahooFinanceImport.default ? YahooFinanceImport.default : YahooFinanceImport
+
+const sanityFields = [
+  'regularMarketChange',
+  'regularMarketChangePercent',
+  'regularMarketPrice',
+  'currency',
+  'longName',
+  'regularMarketPreviousClose'
+]
+
+async function requestStocks(config) {
+  const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
+  const requests = []
+  const stocks = []
+
+  for (const stock of config.stocks) {
+    requests.push(yahooFinance.quoteSummary(stock.symbol, { modules: ['price'] }))
+  }
+
+  const responses = await Promise.all(requests.map((request) => request.catch((error) => error)))
+
+  for (const [index, response] of responses.entries()) {
+    if (response instanceof Error) {
+      Log.warn(`API request for ${config.stocks[index].symbol} failed:`, response.message)
+      continue
+    }
+
+    if (!response.price) {
+      Log.warn(`Response for ${config.stocks[index].symbol} does not satisfy expected payload.`)
+      continue
+    }
+
+    const metadata = {
+      symbol: config.stocks[index].symbol,
+      name: config.stocks[index].name,
+      quantity: config.stocks[index].quantity,
+      hidden: config.stocks[index].hidden,
+      purchasePrice: config.stocks[index].purchasePrice
+    }
+
+    if (response.price.currency === 'GBp') {
+      response.price.regularMarketPrice /= 100
+      response.price.regularMarketChange /= 100
+      response.price.currency = 'GBP'
+    }
+
+    if (config.maxChangeAge > 0) {
+      const maxAllowedTimestamp = Date.now() - config.maxChangeAge
+      try {
+        if (maxAllowedTimestamp > Date.parse(response.price.regularMarketTime)) {
+          response.price.regularMarketPreviousClose = response.price.regularMarketPrice
+          response.price.regularMarketChange = 0
+          response.price.regularMarketChangePercent = 0
+        }
+      } catch (error) {
+        Log.warn('Could not parse lastChange date', error)
+      }
+    }
+
+    stocks.push({
+      price: response.price,
+      meta: metadata
+    })
+  }
+
+  return stocks
+}
+
+module.exports = NodeHelper.create({
+  start() {
+    Log.log(`${this.name} helper method started...`)
+  },
+
+  async socketNotificationReceived(notification, payload) {
+    if (!notification.includes('JAST_STOCKS_REQUEST')) {
+      Log.warn(`${notification} is invalid notification`)
+      return
+    }
+
+    const identifier = notification.substring('JAST_STOCKS_REQUEST'.length + 1)
+    let stocks = await requestStocks(payload)
+
+    stocks = stocks.filter((stock) =>
+      sanityFields.every((field) => {
+        if (Object.prototype.hasOwnProperty.call(stock.price, field)) {
+          return true
+        }
+
+        Log.warn(
+          `Skipped symbol '${stock.meta.symbol}' as it's response did not have required property '${field}'. This is usually the case when a symbol is misspelled`
+        )
+        return false
+      })
+    )
+
+    this.sendSocketNotification(`JAST_STOCKS_RESPONSE-${identifier}`, {
+      lastUpdate: Date.now(),
+      stocks
+    })
+  }
+})
