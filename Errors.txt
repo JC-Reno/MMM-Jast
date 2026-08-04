@@ -1,0 +1,20 @@
+/home/jc/MagicMirror/node_modules/electron/dist/electron exited with signal SIGINT
+[2026-08-03 23:50:56.903] [ERROR] [app] Error when loading MMM-Jast: s.create is not a function
+[2026-08-03 23:50:56.990] [ERROR] [unknown] (node:1406) [SharpElectronLinux] Warning: Binaries provided by Electron for use on Linux may be incompatible with sharp - see https://sharp.pixelplumbing.com/install#electron-and-linux
+(Use `electron --trace-warnings ...` to show where the warning was created)
+[1973:0803/235057.440594:ERROR:media/gpu/vaapi/vaapi_wrapper.cc:1658] vaInitialize failed: unknown libva error
+
+
+FOUND IN Out Log:
+
+[2026-08-04 09:47:50.040] [INFO]  [updatenotification] Update found for module: MMM-Jast
+[2026-08-04 09:47:50.042] [DEBUG] [updatenotification] Update Result: [
+  {
+    name: 'MMM-Jast',
+    updateCommand: null,
+    inProgress: false,
+    error: null,
+    updated: false,
+    needRestart: false
+  }
+]
