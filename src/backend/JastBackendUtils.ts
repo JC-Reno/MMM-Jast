@@ -1,5 +1,4 @@
 import * as Log from 'logger'
-import * as yahooFinance2Module from 'yahoo-finance2'
 import { Config } from '../types/Config'
 import { StockResponse } from '../types/StockResponse'
 
@@ -11,14 +10,41 @@ type YahooFinanceClient = {
   quoteSummary: (symbol: string, options: { modules: string[] }) => Promise<QuoteSummaryResponse>
 }
 
-// Handle both ESM and CommonJS module formats
-// TypeScript sees the namespace import, but at runtime Rollup will provide the correct format
-const YahooFinance = ('default' in yahooFinance2Module
-  ? yahooFinance2Module.default
-  : yahooFinance2Module) as unknown as new (options: { suppressNotices: string[] }) => YahooFinanceClient
+type YahooFinanceConstructor = new (options: { suppressNotices: string[] }) => YahooFinanceClient
+
+let cachedYahooFinanceConstructor: YahooFinanceConstructor | null | undefined
+let hasLoggedMissingYahooFinance = false
+
+async function getYahooFinanceConstructor(): Promise<YahooFinanceConstructor | null> {
+  if (cachedYahooFinanceConstructor !== undefined) {
+    return cachedYahooFinanceConstructor
+  }
+
+  try {
+    const yahooFinance2Module = await import('yahoo-finance2')
+    cachedYahooFinanceConstructor = ('default' in yahooFinance2Module
+      ? yahooFinance2Module.default
+      : yahooFinance2Module) as unknown as YahooFinanceConstructor
+  } catch (error) {
+    cachedYahooFinanceConstructor = null
+
+    if (!hasLoggedMissingYahooFinance) {
+      const message = error instanceof Error ? error.message : String(error)
+      Log.error("MMM-Jast dependency 'yahoo-finance2' is missing. Please run 'npm ci' in MMM-Jast directory.", message)
+      hasLoggedMissingYahooFinance = true
+    }
+  }
+
+  return cachedYahooFinanceConstructor
+}
 
 const JastBackendUtils = {
   async requestStocks(config: Config): Promise<StockResponse[]> {
+    const YahooFinance = await getYahooFinanceConstructor()
+    if (!YahooFinance) {
+      return []
+    }
+
     const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
     const stocks = []
     const promises: Promise<QuoteSummaryResponse>[] = []

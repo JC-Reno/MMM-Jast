@@ -15,11 +15,33 @@
 
 const NodeHelperImport = require('node_helper')
 const Log = require('logger')
-const YahooFinanceImport = require('yahoo-finance2')
 
 const NodeHelper = NodeHelperImport && NodeHelperImport.default ? NodeHelperImport.default : NodeHelperImport
-const YahooFinance =
-  YahooFinanceImport && YahooFinanceImport.default ? YahooFinanceImport.default : YahooFinanceImport
+let YahooFinance
+let hasLoggedMissingYahooFinance = false
+
+function getYahooFinanceConstructor() {
+  if (YahooFinance) {
+    return YahooFinance
+  }
+
+  try {
+    const YahooFinanceImport = require('yahoo-finance2')
+    YahooFinance =
+      YahooFinanceImport && YahooFinanceImport.default ? YahooFinanceImport.default : YahooFinanceImport
+    return YahooFinance
+  } catch (error) {
+    if (!hasLoggedMissingYahooFinance) {
+      Log.error(
+        "MMM-Jast dependency 'yahoo-finance2' is missing. Please run 'npm ci' in MMM-Jast directory.",
+        error.message
+      )
+      hasLoggedMissingYahooFinance = true
+    }
+
+    return null
+  }
+}
 
 const sanityFields = [
   'regularMarketChange',
@@ -31,7 +53,12 @@ const sanityFields = [
 ]
 
 async function requestStocks(config) {
-  const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
+  const YahooFinanceConstructor = getYahooFinanceConstructor()
+  if (typeof YahooFinanceConstructor !== 'function') {
+    return []
+  }
+
+  const yahooFinance = new YahooFinanceConstructor({ suppressNotices: ['yahooSurvey'] })
   const requests = []
   const stocks = []
 
