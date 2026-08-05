@@ -46,7 +46,7 @@ export default [
   },
   {
     input: './src/backend/Backend.ts',
-    external: ['node_helper', 'logger', 'yahoo-finance2'],
+    external: ['node_helper', 'logger'],
     output: {
       banner: bannerText,
       file: './node_helper.js',
