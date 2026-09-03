@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { Config } from '../types/Config'
 import { StockPrice, StockResponse } from '../types/StockResponse'
 
-type QuoteSummaryResult = {
+interface QuoteSummaryResult {
   price?: StockPrice
   summaryDetail?: {
     currency?: string
@@ -25,9 +25,30 @@ vi.mock('logger', () => ({
   debug: vi.fn()
 }))
 
-import JastBackendUtils from './JastBackendUtils'
+import JastBackendUtils, { ensureYahooFinanceRuntimeCompatibility } from './JastBackendUtils'
 
 describe('JastBackendUtils', () => {
+  it('should expose Node globals to the Yahoo client when Electron has a browser-like self object', () => {
+    const originalSelf = globalThis.self
+    const originalProcess = globalThis.process
+    const originalGlobal = globalThis.global
+
+    try {
+      Object.defineProperty(globalThis, 'self', { value: {}, writable: true, configurable: true })
+      Object.defineProperty(globalThis, 'global', { value: {}, writable: true, configurable: true })
+
+      ensureYahooFinanceRuntimeCompatibility()
+
+      expect((globalThis.self as typeof globalThis & { process?: unknown }).process).toBe(originalProcess)
+      expect((globalThis.global as typeof globalThis & { process?: unknown }).process).toBe(originalProcess)
+      expect((globalThis as typeof globalThis & { process?: unknown }).process).toBe(originalProcess)
+    } finally {
+      Object.defineProperty(globalThis, 'self', { value: originalSelf, writable: true, configurable: true })
+      Object.defineProperty(globalThis, 'process', { value: originalProcess, writable: true, configurable: true })
+      Object.defineProperty(globalThis, 'global', { value: originalGlobal, writable: true, configurable: true })
+    }
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
   })

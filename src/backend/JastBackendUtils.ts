@@ -2,11 +2,11 @@ import * as Log from 'logger'
 import { Config } from '../types/Config'
 import { StockResponse } from '../types/StockResponse'
 
-type QuoteSummaryResponse = {
+interface QuoteSummaryResponse {
   price?: StockResponse['price']
 }
 
-type YahooFinanceClient = {
+interface YahooFinanceClient {
   quoteSummary: (symbol: string, options: { modules: string[] }) => Promise<QuoteSummaryResponse>
 }
 
@@ -15,12 +15,47 @@ type YahooFinanceConstructor = new (options: { suppressNotices: string[] }) => Y
 let cachedYahooFinanceConstructor: YahooFinanceConstructor | null | undefined
 let hasLoggedMissingYahooFinance = false
 
+/**
+ *
+ */
+export function ensureYahooFinanceRuntimeCompatibility(): void {
+  if (typeof process === 'undefined' || typeof globalThis === 'undefined') {
+    return
+  }
+
+  const ensureGlobalProperty = (target: object, name: string, value: unknown) => {
+    if (!Object.prototype.hasOwnProperty.call(target, name)) {
+      Object.defineProperty(target, name, {
+        value,
+        configurable: true,
+        enumerable: false,
+        writable: true
+      })
+    }
+  }
+
+  if (typeof globalThis.self === 'object' && globalThis.self !== null) {
+    ensureGlobalProperty(globalThis.self as object, 'process', process)
+  }
+
+  if (typeof globalThis.global === 'object' && globalThis.global !== null) {
+    ensureGlobalProperty(globalThis.global as object, 'process', process)
+  }
+
+  ensureGlobalProperty(globalThis, 'process', process)
+  ensureGlobalProperty(globalThis, 'global', globalThis)
+}
+
+/**
+ *
+ */
 async function getYahooFinanceConstructor(): Promise<YahooFinanceConstructor | null> {
   if (cachedYahooFinanceConstructor !== undefined) {
     return cachedYahooFinanceConstructor
   }
 
   try {
+    ensureYahooFinanceRuntimeCompatibility()
     const yahooFinance2Module = await import('yahoo-finance2')
     cachedYahooFinanceConstructor = ('default' in yahooFinance2Module
       ? yahooFinance2Module.default
